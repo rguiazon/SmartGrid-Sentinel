@@ -19,9 +19,8 @@ The application provides a high-fidelity representation of a Smart Grid's archit
 * Visual Feedback: Dynamic CSS animations and state changes visualize data flow corruption across the infrastructure.
 
 ## 🛠️ Technology Stack
-* Frontend: Single-file HTML5/CSS3 (Tailwind CSS)
+* Frontend: Single-file HTML5/CSS3 
 * Logic: Vanilla JavaScript / TypeScript
-* Icons: FontAwesome for industrial and security iconography
 
 ## 📖 Glossary of Attacks
 The simulator includes detailed modeling for:
