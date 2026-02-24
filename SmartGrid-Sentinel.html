@@ -1,0 +1,938 @@
+<!-- 
+MIT License 
+Copyright (c) 2026 Dr. Raoul Guiazon 
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, provided that the following conditions are met:
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Grid Cyber-Sentinel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #020617;
+            --bg-card: rgba(15, 23, 42, 0.5);
+            --bg-node: #1e293b;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border-main: #1e293b;
+            --border-node: #334155;
+            --header-text: #ffffff;
+        }
+
+        body.light-mode {
+            --bg-main: #f8fafc;
+            --bg-card: rgba(255, 255, 255, 0.9);
+            --bg-node: #f1f5f9;
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --border-main: #e2e8f0;
+            --border-node: #cbd5e1;
+            --header-text: #0f172a;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .theme-card {
+            background-color: var(--bg-card);
+            border-color: var(--border-main);
+        }
+
+        .theme-node {
+            background-color: var(--bg-node);
+            border-color: var(--border-node);
+        }
+
+        .theme-text-muted {
+            color: var(--text-muted);
+        }
+
+        .theme-header {
+            color: var(--header-text);
+        }
+
+        @keyframes shimmer {
+            0% {
+                transform: translateX(-100%);
+            }
+
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        .animate-shimmer {
+            animation: shimmer 2s infinite linear;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 10px;
+        }
+
+        .node-pulse {
+            animation: pulse-red 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse-red {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1.1);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            }
+
+            50% {
+                opacity: .8;
+                transform: scale(1.05);
+                box-shadow: 0 0 20px 10px rgba(239, 68, 68, 0);
+            }
+        }
+
+        .asset-node {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .asset-node:hover {
+            border-color: #3b82f6;
+            background-color: var(--bg-node);
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+
+        .step-btn {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .step-btn:hover:not(.disabled) {
+            transform: scale(1.05);
+        }
+
+        .step-btn.active {
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+        }
+
+        .theme-toggle-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            border-width: 1px;
+            transition: all 0.3s ease;
+            background-color: var(--bg-node);
+            border-color: var(--border-node);
+            color: var(--text-main);
+        }
+
+        .theme-toggle-btn:hover {
+            border-color: #3b82f6;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans">
+    <div id="app" class="p-4 md:p-8">
+        <!-- Header -->
+        <header class="max-w-6xl mx-auto mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-bold flex items-center gap-3 theme-header">
+                    <i class="fas fa-shield-halved text-blue-500"></i>
+                    Smart Grid Cyber-Sentinel
+                </h1>
+                <p class="theme-text-muted mt-1 text-sm font-medium">Interactive Infrastructure Vulnerability Simulator
+                </p>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="toggleTheme()" class="theme-toggle-btn shadow-lg" title="Toggle Light/Dark Mode">
+                    <i id="theme-icon" class="fas fa-moon text-blue-400"></i>
+                    <span id="theme-text" class="text-xs font-bold uppercase tracking-wider">Dark Mode</span>
+                </button>
+                <div id="system-status" class="flex gap-2 theme-card p-1 rounded-lg border">
+                    <div class="px-4 py-2 rounded-md theme-node border text-sm font-medium">
+                        Grid Status: <span id="status-text"
+                            class="text-green-400 font-bold uppercase tracking-wider">Nominal</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left: Visualization Area -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="theme-card border rounded-2xl p-6 md:p-10 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                        <i class="fas fa-bolt text-[200px]"></i>
+                    </div>
+
+                    <!-- Zone A -->
+                    <div class="relative z-10">
+                        <h3
+                            class="text-[10px] font-bold theme-text-muted uppercase mb-6 tracking-widest flex items-center gap-2">
+                            <div class="w-1.5 h-1.5 rounded-full bg-slate-500"></div> Zone A: Generation
+                        </h3>
+                        <div class="flex items-center justify-between">
+                            <div id="node-plant" onclick="showNodeMenu('node-plant')"
+                                class="asset-node flex flex-col items-center p-4 rounded-xl border-2 theme-node w-32 relative">
+                                <i class="fas fa-industry text-2xl text-blue-400 mb-2"></i>
+                                <span class="text-[10px] font-bold theme-text-muted uppercase text-center">Power
+                                    Plant</span>
+                            </div>
+                            <div class="flex-1 h-1 mx-2 bg-slate-700 rounded-full relative overflow-hidden">
+                                <div id="conn-a"
+                                    class="absolute inset-0 -translate-x-full transition-transform duration-1000 bg-blue-500">
+                                    <div
+                                        class="absolute inset-0 animate-shimmer bg-gradient-to-r from-transparent via-white/30 to-transparent">
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="node-substation" onclick="showNodeMenu('node-substation')"
+                                class="asset-node flex flex-col items-center p-4 rounded-xl border-2 theme-node w-32 relative">
+                                <i class="fas fa-bolt text-2xl text-blue-400 mb-2"></i>
+                                <span
+                                    class="text-[10px] font-bold theme-text-muted uppercase text-center">Substation</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="h-10 w-px border-l border-dashed border-slate-700 ml-16 my-2"></div>
+
+                    <!-- Zone B -->
+                    <div class="relative z-10">
+                        <h3
+                            class="text-[10px] font-bold theme-text-muted uppercase mb-6 tracking-widest flex items-center gap-2">
+                            <div class="w-1.5 h-1.5 rounded-full bg-blue-500"></div> Zone B: Control Center
+                        </h3>
+                        <div class="flex items-center justify-around">
+                            <div class="flex flex-col gap-4">
+                                <div id="node-historian" onclick="showNodeMenu('node-historian')"
+                                    class="asset-node flex flex-col items-center p-4 rounded-xl border-2 theme-node w-32 relative">
+                                    <i class="fas fa-server text-2xl text-blue-400 mb-2"></i>
+                                    <span
+                                        class="text-[10px] font-bold theme-text-muted uppercase text-center">Historian</span>
+                                </div>
+                                <div id="node-scada" onclick="showNodeMenu('node-scada')"
+                                    class="asset-node flex flex-col items-center p-4 rounded-xl border-2 theme-node w-32 relative">
+                                    <i class="fas fa-database text-2xl text-blue-400 mb-2"></i>
+                                    <span class="text-[10px] font-bold theme-text-muted uppercase text-center">SCADA
+                                        DB</span>
+                                </div>
+                            </div>
+                            <div class="h-32 w-px bg-slate-700 relative">
+                                <div id="conn-b"
+                                    class="absolute inset-x-0 bottom-0 h-0 transition-all duration-1000 bg-blue-500">
+                                </div>
+                            </div>
+                            <div id="node-hmi" onclick="showNodeMenu('node-hmi')"
+                                class="asset-node flex flex-col items-center p-4 rounded-xl border-2 theme-node w-32 relative">
+                                <i class="fas fa-desktop text-2xl text-blue-400 mb-2"></i>
+                                <span class="text-[10px] font-bold theme-text-muted uppercase text-center">HMI /
+                                    Operator</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="h-10 w-px border-l border-dashed border-slate-700 ml-16 my-2"></div>
+
+                    <!-- Zone C -->
+                    <div class="relative z-10">
+                        <h3
+                            class="text-[10px] font-bold theme-text-muted uppercase mb-6 tracking-widest flex items-center gap-2">
+                            <div class="w-1.5 h-1.5 rounded-full bg-green-500"></div> Zone C: Consumer Edge
+                        </h3>
+                        <div class="flex items-center justify-between">
+                            <div id="node-meter" onclick="showNodeMenu('node-meter')"
+                                class="asset-node flex flex-col items-center p-4 rounded-xl border-2 theme-node w-32 relative">
+                                <i class="fas fa-home text-2xl text-blue-400 mb-2"></i>
+                                <span class="text-[10px] font-bold theme-text-muted uppercase text-center">Smart
+                                    Meter</span>
+                            </div>
+                            <div class="flex-1 h-1 mx-2 bg-slate-700 rounded-full relative overflow-hidden">
+                                <div id="conn-c"
+                                    class="absolute inset-0 -translate-x-full transition-transform duration-1000 bg-blue-500">
+                                    <div
+                                        class="absolute inset-0 animate-shimmer bg-gradient-to-r from-transparent via-white/30 to-transparent">
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="node-iot" onclick="showNodeMenu('node-iot')"
+                                class="asset-node flex flex-col items-center p-4 rounded-xl border-2 theme-node w-32 relative">
+                                <i class="fas fa-microchip text-2xl text-blue-400 mb-2"></i>
+                                <span class="text-[10px] font-bold theme-text-muted uppercase text-center">Industrial
+                                    IoT</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Node Context Menu -->
+                    <div id="context-menu"
+                        class="hidden absolute z-50 theme-card border border-blue-500 shadow-2xl rounded-xl p-4 w-64 animate-in fade-in zoom-in duration-200">
+                        <div class="flex justify-between items-center mb-3">
+                            <span id="menu-title"
+                                class="text-[10px] font-black text-blue-400 uppercase tracking-widest">Select
+                                Attack</span>
+                            <button onclick="hideMenu()" class="theme-text-muted hover:filter brightness-150"><i
+                                    class="fas fa-times"></i></button>
+                        </div>
+                        <div id="attack-options" class="space-y-2"></div>
+                    </div>
+                </div>
+
+                <!-- Interactive Info Panel -->
+                <div id="info-panel" class="hidden">
+                    <div class="theme-card border p-6 rounded-2xl shadow-2xl">
+                        <div class="flex items-start justify-between mb-6">
+                            <div>
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span id="severity-badge"
+                                        class="px-2 py-0.5 rounded text-[10px] font-bold text-white uppercase bg-red-600">CRITICAL</span>
+                                    <span id="protocol-text"
+                                        class="theme-text-muted text-xs font-mono tracking-tight font-bold">Protocol:
+                                        ---</span>
+                                </div>
+                                <h2 id="scenario-title" class="text-xl font-bold uppercase tracking-tight theme-header">
+                                    Scenario Title</h2>
+                            </div>
+                            <button onclick="resetSimulation()"
+                                class="theme-node hover:filter brightness-110 p-2 px-4 rounded-lg theme-text-muted transition-all text-xs border">
+                                Reset System
+                            </button>
+                        </div>
+
+                        <!-- Step Navigation -->
+                        <div class="mb-8">
+                            <div
+                                class="flex justify-between mb-3 text-[10px] font-bold theme-text-muted uppercase tracking-widest">
+                                <span>Attack Propagation Control</span>
+                                <span id="phase-counter" class="text-blue-400 font-mono">Select Step Below</span>
+                            </div>
+                            <div class="flex gap-2">
+                                <div onclick="goToStep(0)" id="step-btn-0"
+                                    class="step-btn flex-1 text-center theme-node border p-2 rounded-lg">
+                                    <div id="step-bar-0" class="h-1.5 rounded-full bg-slate-700 mb-2"></div>
+                                    <span class="text-[9px] uppercase font-bold theme-text-muted">1. Intrusion</span>
+                                </div>
+                                <div onclick="goToStep(1)" id="step-btn-1"
+                                    class="step-btn flex-1 text-center theme-node border p-2 rounded-lg">
+                                    <div id="step-bar-1" class="h-1.5 rounded-full bg-slate-700 mb-2"></div>
+                                    <span class="text-[9px] uppercase font-bold theme-text-muted">2. Exploit</span>
+                                </div>
+                                <div onclick="goToStep(2)" id="step-btn-2"
+                                    class="step-btn flex-1 text-center theme-node border p-2 rounded-lg">
+                                    <div id="step-bar-2" class="h-1.5 rounded-full bg-slate-700 mb-2"></div>
+                                    <span class="text-[9px] uppercase font-bold theme-text-muted">3. Delivery</span>
+                                </div>
+                                <div onclick="goToStep(3)" id="step-btn-3"
+                                    class="step-btn flex-1 text-center theme-node border p-2 rounded-lg">
+                                    <div id="step-bar-3" class="h-1.5 rounded-full bg-slate-700 mb-2"></div>
+                                    <span class="text-[9px] uppercase font-bold theme-text-muted">4. Impact</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step Intelligence Feed -->
+                        <div id="intel-feed"
+                            class="theme-card border border-blue-500/30 rounded-xl p-4 min-h-[100px] flex gap-4 animate-in fade-in duration-500">
+                            <div class="text-blue-500 flex-shrink-0">
+                                <i class="fas fa-terminal mt-1"></i>
+                            </div>
+                            <div>
+                                <h4 id="intel-header"
+                                    class="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">Live
+                                    Intelligence Feed</h4>
+                                <p id="intel-body" class="theme-text-muted text-sm italic font-mono font-medium">Select
+                                    Step 1 to
+                                    begin analyzing attack propagation...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div id="empty-state"
+                    class="theme-card border-2 border-dashed rounded-2xl p-16 flex flex-col items-center text-center">
+                    <i class="fas fa-crosshairs text-4xl text-blue-500 mb-6 animate-pulse"></i>
+                    <h3 class="theme-text-muted text-lg font-medium">Identify Entry Point</h3>
+                    <p class="theme-text-muted opacity-70 text-sm mt-2 max-w-sm">
+                        Click on an asset node (e.g., Smart Meter or HMI) to reveal vulnerabilities and launch a
+                        multi-step simulation.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Right: Legend and Info -->
+            <div class="space-y-4">
+                <div class="theme-card border rounded-2xl p-6 shadow-xl">
+                    <h3 class="text-[10px] font-extrabold theme-text-muted uppercase tracking-widest mb-4">Security
+                        Protocol
+                        Key</h3>
+                    <div class="space-y-3 text-[11px]">
+                        <div class="flex items-center justify-between p-2 theme-node rounded border">
+                            <span class="theme-text-muted font-bold">Modbus/TCP</span>
+                            <span class="text-blue-400 font-mono font-bold">Unencrypted</span>
+                        </div>
+                        <div class="flex items-center justify-between p-2 theme-node rounded border">
+                            <span class="theme-text-muted font-bold">DNP3</span>
+                            <span class="text-blue-400 font-mono font-bold">Legacy/Auth Gap</span>
+                        </div>
+                        <div class="flex items-center justify-between p-2 theme-node rounded border">
+                            <span class="theme-text-muted font-bold">IEC 61850</span>
+                            <span class="text-blue-400 font-mono font-bold">GOOSE Spoofing</span>
+                        </div>
+                        <div class="flex items-center justify-between p-2 theme-node rounded border">
+                            <span class="theme-text-muted font-bold">Zigbee/Mesh</span>
+                            <span class="text-blue-400 font-mono font-bold">Key Extraction</span>
+                        </div>
+                    </div>
+                    <div class="mt-6 pt-6 border-t border-slate-800">
+                        <p class="text-[10px] theme-text-muted leading-relaxed italic">
+                            "Digital security is a perpetual cat and mouse game. There is no silver bullet."
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Cyber Attack Glossary -->
+                <div class="theme-card border rounded-2xl p-6 shadow-xl relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+                        <i class="fas fa-book-medical text-4xl text-blue-500"></i>
+                    </div>
+
+                    <h3
+                        class="text-[10px] font-black theme-text-muted uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <i class="fas fa-list-ul text-blue-400"></i>
+                        Cyber Attack Glossary
+                    </h3>
+
+                    <div class="space-y-4 relative z-10">
+                        <div>
+                            <select id="glossary-select" onchange="updateGlossary()"
+                                class="w-full theme-node border rounded-lg p-2.5 text-xs theme-text-muted focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-all appearance-none cursor-pointer font-bold">
+                                <option value="" disabled selected>Select a term to learn more...</option>
+                                <option value="phishing">Phishing & Spear Phishing</option>
+                                <option value="ransomware">Ransomware</option>
+                                <option value="replay">Replay Attack</option>
+                                <option value="mitm">Man-in-the-Middle (MitM)</option>
+                                <option value="ddos">Distributed Denial of Service (DDoS)</option>
+                                <option value="sqli">SQL Injection (SQLi)</option>
+                                <option value="supply-chain">Supply Chain Attack</option>
+                                <option value="logic-bomb">Logic Bomb</option>
+                                <option value="wrench">Wrench Attack</option>
+                                <option value="data-injection">Data Injection</option>
+                                <option value="spoofing">Spoofing</option>
+                            </select>
+                        </div>
+
+                        <div id="glossary-display" class="hidden animate-in fade-in slide-in-from-top-4 duration-500">
+                            <div class="theme-node border theme-card rounded-xl p-4 space-y-4 backdrop-blur-sm">
+                                <div>
+                                    <div
+                                        class="text-[10px] font-black text-blue-400 uppercase tracking-tighter mb-1.5 flex items-center gap-1.5">
+                                        <div class="w-1 h-3 bg-blue-500 rounded-full"></div>
+                                        Definition
+                                    </div>
+                                    <p id="glossary-desc"
+                                        class="text-[11px] theme-text-muted leading-relaxed font-bold"></p>
+                                </div>
+                                <div class="pt-3 border-t border-slate-800/50">
+                                    <div
+                                        class="text-[10px] font-black text-amber-500 uppercase tracking-tighter mb-1.5 flex items-center gap-1.5">
+                                        <div class="w-1 h-3 bg-amber-500 rounded-full"></div>
+                                        Application in Simulator
+                                    </div>
+                                    <p id="glossary-context"
+                                        class="text-[11px] theme-text-muted italic leading-relaxed font-medium">
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer / Notice -->
+        <footer class="max-w-6xl mx-auto mt-12 pt-8 border-t border-slate-800/50 pb-8">
+            <div class="flex flex-col items-center text-center space-y-4">
+                <div class="theme-text-muted text-[10px] uppercase tracking-[0.2em] font-black opacity-40">
+                    License Information
+                </div>
+                <p class="theme-text-muted text-xs font-bold italic">
+                    MIT License Copyright (c) 2026 Dr. Raoul Guiazon
+                </p>
+                <div class="flex items-center gap-4 text-xs theme-text-muted opacity-60">
+                    <span class="flex items-center gap-1"><i class="fas fa-certificate"></i> MIT Licensed</span>
+                    <span class="w-1 h-1 rounded-full bg-slate-600"></span>
+                    <span class="flex items-center gap-1"><i class="fas fa-file-contract"></i> Permission Granted</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        const scenarios = [
+            {
+                id: 1,
+                title: "The 'Blind Operator' (HMI Hijack)",
+                entryNode: "node-hmi",
+                targetNodes: ["node-hmi", "node-plant"],
+                protocol: "HTTP/S, VNC",
+                severity: "Critical",
+                steps: [
+                    "Attacker gains initial access to the HMI via a Spear Phishing campaign targeting control room operators. Remote Access Trojan (RAT) is installed.",
+                    "The RAT exploits unpatched VNC services to achieve screen-mirroring capabilities. Attacker maps the plant topology and PLC addresses.",
+                    "Malicious commands are sent to the plant's PLC via Modbus/TCP, while the HMI screen is spoofed to show 'Nominal' sensor readings to the operator.",
+                    "Grid Consequence: Turbines are driven to critical over-speed. Physical hardware failure occurs while operators remain unaware until power trips."
+                ]
+            },
+            {
+                id: 2,
+                title: "Ransomware-Induced Blackout",
+                entryNode: "node-scada",
+                targetNodes: ["node-scada"],
+                protocol: "SQL / Proprietary",
+                severity: "High",
+                steps: [
+                    "A contractor's laptop infected with ransomware connects to the Operations Network (Zone B), bypassing the firewall.",
+                    "The ransomware identifies the central SCADA database and begins high-speed encryption of critical configuration files.",
+                    "Active load-balancing algorithms lose access to real-time grid telemetry. The database locks, rendering the grid control system blind.",
+                    "Grid Consequence: To prevent uncontrolled surges and physical damage, operators are forced to perform an emergency manual shutdown."
+                ]
+            },
+            {
+                id: 3,
+                title: "Billing Data Sabotage",
+                entryNode: "node-meter",
+                targetNodes: ["node-meter"],
+                protocol: "Zigbee / Mesh",
+                severity: "Medium",
+                steps: [
+                    "Physical proximity to a neighborhood smart meter allows an attacker to intercept Zigbee signals using a software-defined radio (SDR).",
+                    "The attacker extracts the network key from a weakly secured meter and begins spoofing encrypted energy-usage packets.",
+                    "Modified 'Zero Usage' packets are replayed into the utility mesh network, reaching the billing server at the control center.",
+                    "Grid Consequence: Massive revenue loss and failure of automated demand forecasting, leading to incorrect power generation purchasing."
+                ]
+            },
+            {
+                id: 4,
+                title: "Substation Replay Attack",
+                entryNode: "node-substation",
+                targetNodes: ["node-substation"],
+                protocol: "DNP3",
+                severity: "High",
+                steps: [
+                    "The cellular gateway of a remote substation is compromised via a default credential vulnerability in the firmware.",
+                    "Traffic monitoring captures unencrypted DNP3 commands. The attacker isolates the 'Trip Circuit Breaker' sequence.",
+                    "The captured DNP3 sequence is re-transmitted to the RTU (Remote Terminal Unit). The lack of sequence-number validation allows the command.",
+                    "Grid Consequence: Regional circuit breakers open without authorization, resulting in an immediate local blackout for thousands of customers."
+                ]
+            },
+            {
+                id: 5,
+                title: "Supply Chain Firmware Poisoning",
+                entryNode: "node-meter",
+                targetNodes: ["node-meter"],
+                protocol: "Vendor Update Channel",
+                severity: "Critical",
+                steps: [
+                    "A third-party vendor's update server is breached. A malicious firmware update is signed with a stolen certificate.",
+                    "Thousands of Smart Meters automatically download and install the 'verified' update during a scheduled maintenance window.",
+                    "The firmware contains a hidden logic bomb. At a pre-defined timestamp, the firmware triggers a persistent internal disconnect.",
+                    "Grid Consequence: Simultaneous mass-disconnection across the city. Meters are 'bricked', requiring physical replacement of hardware."
+                ]
+            },
+            {
+                id: 6,
+                title: "MitM on Demand-Response",
+                entryNode: "node-iot",
+                targetNodes: ["node-iot"],
+                protocol: "TLS / HTTPS",
+                severity: "High",
+                steps: [
+                    "Attackers compromise the cloud-bridge used for Industrial IoT load management through a Man-in-the-Middle (MitM) exploit.",
+                    "A valid 'Load Shedding' command from the utility (to reduce usage during peak) is intercepted and modified in transit.",
+                    "The modified command signals heavy industrial machinery to switch to 'Full Capacity' instead of shutting down.",
+                    "Grid Consequence: Sudden, massive surge in demand during an already strained peak period triggers a cascading grid failure."
+                ]
+            },
+            {
+                id: 7,
+                title: "Wrench Attack",
+                entryNode: "node-plant",
+                targetNodes: ["node-plant", "node-substation"],
+                protocol: "Physical/Human",
+                severity: "Critical",
+                steps: [
+                    "A field technician is physically coerced into providing their hardware security token and biometric credentials.",
+                    "The attacker uses the stolen credentials to log into the substation maintenance terminal with full administrative privileges.",
+                    "Safety interlocks are digitally disabled. Protective relays are reprogrammed to ignore over-voltage conditions.",
+                    "Grid Consequence: Physical destruction of transformers through induced electrical fire, requiring months of lead-time for replacement."
+                ]
+            },
+            {
+                id: 8,
+                title: "The 'Ghost Consumer' DDoS",
+                entryNode: "node-iot",
+                targetNodes: ["node-iot", "node-meter"],
+                protocol: "IoT Botnet",
+                severity: "Medium",
+                steps: [
+                    "Thousands of high-wattage IoT devices (EV chargers, smart heaters) are enrolled into a global botnet via a shared vulnerability.",
+                    "The botnet command-and-control server issues a synchronized 'Power ON' command to all devices at exactly the same second.",
+                    "The sudden, massive load creates an instantaneous drop in grid frequency, faster than automated systems can respond.",
+                    "Grid Consequence: Frequency instability triggers automatic protection relays, causing a localized blackout to prevent generator damage."
+                ]
+            },
+            {
+                id: 9,
+                title: "Historian Server SQL Injection",
+                entryNode: "node-historian",
+                targetNodes: ["node-historian"],
+                protocol: "SQL",
+                severity: "Medium",
+                steps: [
+                    "A public-facing web portal for environmental compliance reporting is found to be vulnerable to classic SQL Injection.",
+                    "The attacker uses the injection vector to gain administrative access to the backend Data Historian server.",
+                    "Critical historical telemetry and compliance logs for the past 5 years are deleted or irreversibly corrupted.",
+                    "Grid Consequence: Operational blindness for long-term planning, massive regulatory fines, and permanent loss of 'Digital Trust'."
+                ]
+            },
+            {
+                id: 10,
+                title: "Digital Twin Desynchronization",
+                entryNode: "node-scada",
+                targetNodes: ["node-scada"],
+                protocol: "OPC-UA",
+                severity: "Medium",
+                steps: [
+                    "An attacker intercepts the OPC-UA stream between the grid sensors and the AI-powered Digital Twin simulation.",
+                    "False temperature and pressure data are injected into the stream, indicating an imminent 'Catastrophic Overheat' in a substation.",
+                    "The AI controller, trusting the digital twin, triggers an emergency preventive shutdown of healthy infrastructure.",
+                    "Grid Consequence: Unnecessary regional power outage caused by the AI reacting to a simulated (but false) emergency."
+                ]
+            }
+        ];
+
+        const glossaryData = {
+            "phishing": {
+                desc: "A form of social engineering where attackers send fraudulent messages designed to trick a person into revealing sensitive information or deploying malicious software. Spear Phishing is a highly targeted version often using personal details.",
+                context: "Used to gain initial access to the HMI (Human Machine Interface) via a Spear Phishing campaign targeting operators."
+            },
+            "ransomware": {
+                desc: "A type of malware that encrypts a victim's files or databases, making them inaccessible. The attacker then demands a ransom payment to provide the decryption key.",
+                context: "Identifies the central SCADA database and begins high-speed encryption of critical configuration files, forcing a grid shutdown."
+            },
+            "replay": {
+                desc: "A network attack in which a valid data transmission is maliciously or fraudulently repeated or delayed to achieve an unauthorized effect.",
+                context: "Used against Smart Meters to falsify usage data and against Substations via the DNP3 protocol to trip circuit breakers."
+            },
+            "mitm": {
+                desc: "An attack where the perpetrator secretly relays and possibly alters the communications between two parties who believe they are directly communicating.",
+                context: "Used to intercept and modify Demand-Response commands, changing a 'reduce load' instruction to 'increase load' during peak periods."
+            },
+            "ddos": {
+                desc: "A malicious attempt to disrupt normal traffic by overwhelming the target or its surrounding infrastructure with a flood of Internet traffic.",
+                context: "Orchestrated via a Botnet of compromised IoT devices to create a sudden, massive surge in power demand, destabilizing grid frequency."
+            },
+            "sqli": {
+                desc: "A vulnerability that occurs when an attacker can interfere with database queries, allowing them to view, delete, or modify unauthorized data.",
+                context: "Used to breach the Historian Server to delete or corrupt critical regulatory compliance and telemetry records."
+            },
+            "supply-chain": {
+                desc: "An attack targeting less secure elements in a supply network, such as injecting malicious code into legitimate product updates.",
+                context: "Malicious code is signed with stolen certificates and embedded in Smart Meter firmware updates to trigger mass disconnections."
+            },
+            "logic-bomb": {
+                desc: "Malicious code inserted into a system that remains dormant until a specific condition (like a specific date/time) is met.",
+                context: "Hidden within poisoned firmware to trigger a persistent internal disconnect across thousands of meters at a pre-defined timestamp."
+            },
+            "wrench": {
+                desc: "Bypassing digital security through physical force, coercion, or theft, targeting the 'Human Element' of the security chain.",
+                context: "Coercing a field technician into providing hardware security tokens and biometric credentials to access substation terminals."
+            },
+            "data-injection": {
+                desc: "Feeding false or misleading telemetry data into a system's input stream to manipulate the behavior of automated logic or AI controllers.",
+                context: "Feeding false sensor data to a Digital Twin to trick an AI controller into triggering an emergency shutdown of healthy infrastructure."
+            },
+            "spoofing": {
+                desc: "Disguising a communication from an unknown source as being from a known, trusted source, applicable to IP/MAC addresses or industrial protocols.",
+                context: "The HMI screen is spoofed to show 'Nominal' sensor readings to the operator while an actual critical disruption is occurring."
+            }
+        };
+
+        function toggleTheme() {
+            const body = document.body;
+            const icon = document.getElementById('theme-icon');
+            const text = document.getElementById('theme-text');
+
+            body.classList.toggle('light-mode');
+
+            const isLight = body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+
+            updateThemeUI(isLight);
+        }
+
+        function updateThemeUI(isLight) {
+            const icon = document.getElementById('theme-icon');
+            const text = document.getElementById('theme-text');
+
+            if (isLight) {
+                icon.className = 'fas fa-sun text-amber-500';
+                text.textContent = 'Light Mode';
+            } else {
+                icon.className = 'fas fa-moon text-blue-400';
+                text.textContent = 'Dark Mode';
+            }
+        }
+
+        // Initialize theme On Load
+        (function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-mode');
+                updateThemeUI(true);
+            }
+        })();
+
+        function updateGlossary() {
+            const select = document.getElementById('glossary-select');
+            const display = document.getElementById('glossary-display');
+            const desc = document.getElementById('glossary-desc');
+            const context = document.getElementById('glossary-context');
+
+            const term = select.value;
+            if (term && glossaryData[term]) {
+                desc.textContent = glossaryData[term].desc;
+                context.textContent = glossaryData[term].context;
+                display.classList.remove('hidden');
+            } else {
+                display.classList.add('hidden');
+            }
+        }
+
+        let selectedScenario = null;
+        let currentStep = -1;
+
+        function showNodeMenu(nodeId) {
+            const menu = document.getElementById('context-menu');
+            const target = document.getElementById(nodeId);
+            const container = target.closest('.relative.overflow-hidden');
+            const applicable = scenarios.filter(s => s.entryNode === nodeId);
+
+            if (applicable.length === 0) return;
+
+            // Show menu briefly to get accurate measurements
+            menu.classList.remove('hidden');
+
+            const containerRect = container.getBoundingClientRect();
+            const targetRect = target.getBoundingClientRect();
+            const menuRect = menu.getBoundingClientRect();
+
+            // Calculate position relative to the container
+            let left = targetRect.left - containerRect.left + targetRect.width + 10;
+            let top = targetRect.top - containerRect.top;
+
+            // Check right edge
+            if (left + menuRect.width > containerRect.width) {
+                // Flip to left side
+                left = targetRect.left - containerRect.left - menuRect.width - 10;
+            }
+
+            // Check bottom edge
+            if (top + menuRect.height > containerRect.height) {
+                top = containerRect.height - menuRect.height - 10;
+            }
+
+            // Ensure not off-screen to the left
+            if (left < 10) left = 10;
+            // Ensure not off-screen at the top
+            if (top < 10) top = 10;
+
+            menu.style.left = `${left}px`;
+            menu.style.top = `${top}px`;
+
+            const optionsDiv = document.getElementById('attack-options');
+            optionsDiv.innerHTML = applicable.map(s => `
+                <button onclick="initSimulation(${s.id})" class="w-full text-left p-3 rounded-lg bg-slate-800 hover:bg-red-900/40 border border-slate-700 hover:border-red-500 transition-all">
+                    <div class="text-[9px] text-slate-500 font-mono mb-1">PROT: ${s.protocol}</div>
+                    <div class="text-xs font-bold text-slate-200">${s.title}</div>
+                </button>
+            `).join('');
+        }
+
+        function hideMenu() {
+            document.getElementById('context-menu').classList.add('hidden');
+        }
+
+        function initSimulation(id) {
+            resetSimulation();
+            selectedScenario = scenarios.find(s => s.id === id);
+
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('info-panel').classList.remove('hidden');
+            document.getElementById('scenario-title').textContent = selectedScenario.title;
+            document.getElementById('protocol-text').textContent = `Protocol: ${selectedScenario.protocol}`;
+
+            const badge = document.getElementById('severity-badge');
+            badge.textContent = selectedScenario.severity;
+            badge.className = `px-2 py-0.5 rounded text-[10px] font-bold text-white uppercase ${selectedScenario.severity === 'Critical' ? 'bg-red-600' : selectedScenario.severity === 'High' ? 'bg-orange-600' : 'bg-amber-600'
+                }`;
+
+            document.getElementById('status-text').textContent = 'Simulation Initialized';
+            document.getElementById('status-text').className = 'text-amber-400 font-bold uppercase tracking-wider';
+
+            hideMenu();
+            // User must now click Step 1
+        }
+
+        function goToStep(index) {
+            if (!selectedScenario) return;
+
+            // Allow clicking any step already reached or the next one
+            if (index > currentStep + 1) {
+                // Flash the next valid step to prompt user
+                const nextStep = document.getElementById(`step-btn-${currentStep + 1}`);
+                nextStep.classList.add('border-blue-500');
+                setTimeout(() => nextStep.classList.remove('border-blue-500'), 500);
+                return;
+            }
+
+            currentStep = index;
+            updateStepUI();
+            runStepLogic(index);
+        }
+
+        function updateStepUI() {
+            [0, 1, 2, 3].forEach(i => {
+                const btn = document.getElementById(`step-btn-${i}`);
+                const bar = document.getElementById(`step-bar-${i}`);
+
+                if (i <= currentStep) {
+                    btn.classList.add('bg-slate-700', 'border-blue-500');
+                    btn.classList.remove('bg-slate-800', 'border-slate-700');
+                    bar.className = `h-1.5 rounded-full ${i === 3 ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-blue-500'}`;
+                    btn.querySelector('span').classList.replace('text-slate-500', 'text-white');
+                } else {
+                    btn.classList.remove('bg-slate-700', 'border-blue-500');
+                    btn.classList.add('bg-slate-800', 'border-slate-700');
+                    bar.className = 'h-1.5 rounded-full bg-slate-700';
+                    btn.querySelector('span').classList.replace('text-white', 'text-slate-500');
+                }
+            });
+
+            document.getElementById('phase-counter').textContent = `PHASE ${currentStep + 1}/4 ACTIVE`;
+
+            // Update Intel Feed
+            const intelHeader = document.getElementById('intel-header');
+            const intelBody = document.getElementById('intel-body');
+            const intelIcon = document.querySelector('#intel-feed i');
+
+            intelHeader.textContent = `PHASE ${currentStep + 1}: INTEL ANALYSIS`;
+            intelBody.textContent = selectedScenario.steps[currentStep];
+
+            if (currentStep === 3) {
+                intelHeader.classList.replace('text-blue-400', 'text-red-400');
+                intelIcon.className = 'fas fa-skull-crossbones mt-1';
+                document.getElementById('intel-feed').classList.add('border-red-500/50');
+                document.getElementById('status-text').textContent = 'CRITICAL DISRUPTION';
+                document.getElementById('status-text').className = 'text-red-500 font-bold uppercase tracking-widest animate-pulse';
+            } else {
+                intelHeader.classList.add('text-blue-400');
+                intelIcon.className = 'fas fa-terminal mt-1';
+                document.getElementById('intel-feed').classList.remove('border-red-500/50');
+            }
+        }
+
+        function runStepLogic(step) {
+            // Visual logic on diagram based on step
+            if (step === 0) {
+                const entry = document.getElementById(selectedScenario.entryNode);
+                entry.classList.add('border-blue-500', 'bg-blue-900/30');
+            }
+
+            if (step === 1) {
+                if (selectedScenario.entryNode === 'node-hmi' || selectedScenario.entryNode === 'node-plant' || selectedScenario.id === 4) {
+                    const conn = document.getElementById('conn-a');
+                    conn.classList.remove('-translate-x-full');
+                    conn.classList.replace('bg-blue-500', 'bg-red-500');
+                } else if (selectedScenario.entryNode === 'node-meter' || selectedScenario.entryNode === 'node-iot') {
+                    const conn = document.getElementById('conn-c');
+                    conn.classList.remove('-translate-x-full');
+                    conn.classList.replace('bg-blue-500', 'bg-red-500');
+                } else {
+                    document.getElementById('conn-b').classList.add('h-full');
+                }
+            }
+
+            if (step === 2) {
+                selectedScenario.targetNodes.forEach(id => {
+                    const el = document.getElementById(id);
+                    el.className = 'asset-node flex flex-col items-center p-4 rounded-xl border-2 border-red-500 bg-red-900/40 w-32 node-pulse';
+                    el.querySelector('i').classList.replace('text-blue-400', 'text-white');
+                });
+            }
+        }
+
+        function resetSimulation() {
+            selectedScenario = null;
+            currentStep = -1;
+            document.getElementById('info-panel').classList.add('hidden');
+            document.getElementById('empty-state').classList.remove('hidden');
+            document.getElementById('status-text').textContent = 'Nominal';
+            document.getElementById('status-text').className = 'text-green-400 font-bold uppercase tracking-wider';
+            document.getElementById('status-text').classList.remove('animate-pulse');
+
+            const nodeIds = ['node-plant', 'node-substation', 'node-historian', 'node-scada', 'node-hmi', 'node-meter', 'node-iot'];
+            nodeIds.forEach(id => {
+                const el = document.getElementById(id);
+                el.className = 'asset-node flex flex-col items-center p-4 rounded-xl border-2 border-slate-700 bg-slate-800 w-32 relative';
+                el.querySelector('i').classList.replace('text-white', 'text-blue-400');
+            });
+
+            ['conn-a', 'conn-b', 'conn-c'].forEach(id => {
+                const el = document.getElementById(id);
+                el.classList.add('-translate-x-full');
+                if (id === 'conn-b') el.classList.remove('h-full');
+                el.classList.remove('bg-red-500');
+                el.classList.add('bg-blue-500');
+            });
+
+            document.getElementById('intel-body').textContent = 'Select Step 1 to begin analyzing attack propagation...';
+            document.getElementById('phase-counter').textContent = 'Select Step Below';
+            document.getElementById('intel-header').classList.replace('text-red-400', 'text-blue-400');
+            document.getElementById('intel-feed').classList.remove('border-red-500/50');
+
+            hideMenu();
+        }
+
+        window.addEventListener('click', (e) => {
+            if (!e.target.closest('.asset-node') && !e.target.closest('#context-menu')) {
+                hideMenu();
+            }
+        });
+    </script>
+</body>
+
+</html>
